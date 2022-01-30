@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Holden (2016) Data Replication & Extension"
 author: "Anwesha Guha, Merly Klaas, Thuy Nguyen,"
 date: "1/27/2022"
 output: html_document
@@ -18,38 +18,39 @@ p_load(here, rio, tidyverse, DT, ggplot2, xaringan, knitr, kableExtra, modelsumm
 dat <- import(here("data", "EDLD_650_CA_schools_es.dta"))
 ``` 
 
-*In this project, you will replicate and extend analysis from Holden (2016). In the dataset EDLD 650 CA school es.dta, you will find the variables listed in Table 1. The dataset includes school years 2003-2009. Without binning the forcing variable, your figures will look slightly different than those in Holden. This is fine and will not affect the substantive conclusions. If you would like to set yourself a data management challenge, attempt to mirror the figures exactly! Pay careful attention throughout to which years you should be using in your analyses.*
+*In this project, you will replicate and extend analysis from Holden (2016). In the dataset EDLD_650_CA_school es.dta, you will find the variables listed in Table 1. The dataset includes school years 2003-2009. Without binning the forcing variable, your figures will look slightly different than those in Holden. This is fine and will not affect the substantive conclusions. If you would like to set yourself a data management challenge, attempt to mirror the figures exactly! Pay careful attention throughout to which years you should be using in your analyses.*
 
 ### A. Assumption tests (4 points)
 
 *For the following tasks, give your best attempt at completing the analysis and write-up. If you are unable to conduct the programming or analysis, describe what you are attempting to do and what your results would mean.*
 
-**A1.** Create a figure that describes whether the forcing variable predicts the question variable of interest. Specifically, did a school with an Academic Performance Index (API) of 643 or lower in 2003 receive additional instructional material funding in 2005 ? Present the figure and associated write-up as you would report these in an academic paper in 2-3 sentences.
+**A1.** Create a figure that describes whether the forcing variable predicts the question variable of interest. Specifically, did a school with an Academic Performance Index (API) of 643 or lower in 2003 receive additional instructional material funding in 2005? Present the figure and associated write-up as you would report these in an academic paper in 2-3 sentences.
 
+In the paper, the following are the variables relevant to this question.
+
+* `api_rank` = shows school's academic performance in 2003 (x)
+
+* `receive_williams` = shows receipt of award in 2005 (observed y)
+
+* `ind` = shows intended receipt of award (intended y)
+
+Create figure with variables below.
 ```{r}
-
-#schools with API of 643 or lower in 2003:
-data_a1 <- data %>% 
-  filter(year == 2003 & norm <= 0) 
-
-# y = receive of treatment = receive_williams; 
-# x = forcing variable = api_rank (or norm)
 #receipt of treatment (receipt Williams) against forcing variable
 
 treat <- ggplot() +
   #actual recipient
-  geom_jitter(data=data, aes(x=api_rank, y=receive_williams), color=grey_mid,alpha=0.4, shape=16) + 
-  
-  # filter year 2003 and API 643 or lower (norm <=0 )
-  geom_jitter(data=data_a1, aes(x=api_rank, y=receive_williams), color="blue",alpha=0.4, shape=16)+
-  
+  geom_jitter(data=dat, aes(x=api_rank, y=receive_williams), color="#3b3b9a", alpha=0.4, shape=16) + 
   #intended recipient
-  geom_line(data=data, aes(x=api_rank, y=ind), color=red_pink, linetype="dashed", size = 1.5) +
-  theme_pander(base_size = 18) + scale_x_continuous("API Score") +
-  scale_y_discrete("Received Williams")
+  geom_line(data=dat, aes(x=api_rank, y=ind), color="#e64173", linetype="dashed", size = 1) +
+  theme_minimal() +
+  scale_x_continuous("API Score") +
+  scale_y_continuous("Award Received")
 
 treat
 ```
+
+The graph shows that the forcing variable `api_rank`, which is the academic performance rank in 2003 which intends to determine eligibility for Williams, does indeed predict (some) change in the probability of treatment, which is the receipt of the Williams award in 2005. The API score of 643 largely separates recipient and non-recipient groups.
 
 **A2.** Is there evidence of schools manipulating their placement around the discontinuity? Present at least two figures demonstrating (a) whether there is evidence that schools attempted to receive an API score that would have made them eligible to receive additional funding; and (b) whether there is evidence that schools that did and did not receive Williams funding were different in observable ways. These figures should present characteristics of schools that are exogenous to the receipt of Williams funding (think about what would be exogenous in this case). Present the figures and associated write-up as you would report these in an academic paper in 1-2 paragraphs. 
 
@@ -58,37 +59,35 @@ treat
 # Zoom in on just the first cut (above/below 643 with 19.099 bandwidth of the cutoff)
 
 dat<- dat %>%
-  filter(api_rank >= (643-19.099)& api_rank <= (643+19.099))
+  filter(api_rank >= (643-19.099)& api_rank <= (643+19.099)) # can choose to re-run treat graph above with this data for a cleaner look
 
 bunch <- dat %>%
   ggplot(aes(api_rank)) +
-  geom_bar(fill = "cyan3") +
+  geom_bar(fill = "cyan3", alpha=.6) +
   geom_vline(xintercept = 643, color = "red") + 
-  labs(x = "API in 2003 relative to cutoff", 
-       )
+  labs(x = "API in 2003 relative to cutoff") +
+  theme_minimal()
 bunch
+```
+There is no evidence of bunching around the 643 cutoff. This makes sense according to Holden's design: 2003 is unambiguously pre-Williams settlement. While 2004 and onwards may expect lower-income schools to manipulate API score to increases textbook funding for their students, that opportunity was not known at this time.
 
-
+```{r}
 #  Examine whether pre-treatment characteristics differ around the cutoff score discontinuity (binned scatterplot of covariates around discontinuity)
-
 
 ## Differences in FRLP status
 sort <- ggplot() +
   geom_boxplot(data=dat, aes(x=as.factor(api_rank), y=percentfrl), fill="tomato3", alpha=0.4) +
-  theme_pander(base_size = 20) +
-  xlab("API in 2003 relative to cutoff") + scale_y_continuous("Percent of Low-Income students")+
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),
-        axis.text=element_text(size=12),
-        axis.title=element_text(size=14,face="bold")) +
-  theme_tufte()
+  xlab("API in 2003 relative to cutoff") + 
+  scale_y_continuous("Percent of Low-Income students")+
+  theme_tufte() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
 sort
-
-dat <-dat %>% mutate(low = ifelse(api_rank <= 643,TRUE,FALSE))
-
-
-
-
 ```
+
+```{r}
+dat <-dat %>% mutate(low = ifelse(api_rank <= 643,TRUE,FALSE))
+```
+
 
 **A3** Optional Extension Construct a table of summary statistics. What are the sample characteristics of the subset of elementary schools in our dataset? What is different about our data from the full data used in Holden (2016) and how might that affect the interpretation of results? Present the table and associated write-up as you would report these in an academic paper in 1-2 paragraphs.
 
