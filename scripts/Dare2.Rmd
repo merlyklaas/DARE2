@@ -84,63 +84,83 @@ sort <- ggplot() +
 sort
 ```
 
-```{r}
-dat <-dat %>% mutate(low = ifelse(api_rank <= 643,TRUE,FALSE))
-```
-
-
 **A3** Optional Extension Construct a table of summary statistics. What are the sample characteristics of the subset of elementary schools in our dataset? What is different about our data from the full data used in Holden (2016) and how might that affect the interpretation of results? Present the table and associated write-up as you would report these in an academic paper in 1-2 paragraphs.
 
 ### B. Replication and Extension (6 points)
 
 *For the following tasks, give your best attempt at completing the analysis and write-up. If you are unable to conduct the programming or analysis, describe what you are attempting to do and what your results would mean. For these tasks, think about what bandwidth is the correct one to present for your main results.*
 
-```{r}
-
-holden <- import(here("data", "EDLD_650_CA_schools_es.dta"))
-```
-
-
 **B1.** Did the receipt of additional funds for instructional materials improve test score outcomes for elementary students in California? Construct a figure that presents graphical evidence in support of your answer to this question. Pay close attention to the bandwidth of analysis Holden selects. Either use the same bandwidth or justify a different selection. Write up your description of this figure in one (1) paragraph as you would for an academic paper. If you have not completed the previously mentioned data management tasks to bin the forcing variable, explain how and why your figure looks different from the original figure in 2-3 sentences.
 
-ind = if they received funds
-average_score = predictor, measured in school-level standard deviations
 Holden only uses 2006 values (p. 106)
-```{r}
-mod <- lm(average_score ~ ind, data=holden)
-summary(mod)
-```
 
 ```{r}
-holden %>% 
-  ggplot()+
-  geom_jitter(aes(x=ind, y=average_score), color="grey50", alpha=0.4, shape=16) +
-  geom_line(aes(x=ind, y = average_score), color="#e64173", linetype="dashed", size=1.5)
-
-
-# Check if the forcing variable 
+dat$ind <- as.factor(dat$ind)
 
 fx <- dat %>% 
   ggplot() +
-  geom_point(data=dat, aes(x=api_rank, y=readingscore, color = low), alpha=0.8, shape=16) +
-  geom_vline(xintercept = 643, color = slate, size = 1.5, alpha = 0.5) +
+  geom_point(aes(x=api_rank, y=average_score, color = ind), alpha=0.8, shape=16) +
+  geom_vline(xintercept = 643, color = "#314f4f", size = 1.5, alpha = 0.5) +
   theme_pander(base_size = 18) +
-  xlab("API score") + ylab("Reading score") 
+  xlab("API score") + 
+  ylab("Average score") 
 
 fx
+```
 
-
+```{r}
 bin <- dat %>% group_by(api_rank) %>% 
-     summarise(across(c("readingscore", "low"), mean))
+     summarise(across(c("average_score", "ind"), mean))
 
-binned_plot <- ggplot() + 
-  geom_point(data=bin, aes(x=api_rank, y=readingscore, colour=as.factor(low)), alpha=0.8, shape=16, size=3) +
-  geom_vline(xintercept = 643, color = slate, size = 1.5, alpha = 0.5) + 
-  theme_pander(base_size = 18) + xlab("API score relative to cutoff") + ylab("Reading score") + 
-  scale_color_manual(values = c(purple, red_pink)) +
-  theme(legend.position = "none")
+bin <- bin %>% mutate(low = ifelse(api_rank <= 643,TRUE,FALSE))
 
-binned_plot
+fx_binned <- bin %>% 
+  ggplot(aes(x=api_rank, y=average_score, color = low)) +
+  geom_point(alpha=0.8, shape=16) +
+  geom_smooth(method = "lm", se=FALSE) +
+  geom_vline(xintercept = 643, color = "#314f4f", size = 1, alpha = 0.5) +
+  theme_pander(base_size = 18) +
+  xlab("API score") + 
+  ylab("Average score") 
+
+fx_binned
+```
+
+We wanted to see the test scores broken down by subject, so the code for that exploration is also below.
+```{r}
+bin_reading <- dat %>% group_by(api_rank) %>% 
+     summarise(across(c("readingscore", "ind"), mean))
+
+bin_reading <- bin_reading %>% mutate(low = ifelse(api_rank <= 643,TRUE,FALSE))
+
+reading_binned <- bin_reading %>% 
+  ggplot(aes(x=api_rank, y=readingscore, color = low)) +
+  geom_point(alpha=0.8, shape=16) +
+  geom_smooth(method = "lm", se=FALSE)+
+  geom_vline(xintercept = 643, color = "#314f4f", size = 1, alpha = 0.5) +
+  theme_pander(base_size = 18) +
+  xlab("API score") + 
+  ylab("Reading score") 
+
+reading_binned
+```
+
+```{r}
+bin_math <- dat %>% group_by(api_rank) %>% 
+     summarise(across(c("mathscore", "ind"), mean))
+
+bin_math <- bin_math %>% mutate(low = ifelse(api_rank <= 643,TRUE,FALSE))
+
+math_binned <- bin_math %>% 
+  ggplot(aes(x=api_rank, y=mathscore, color = low)) +
+  geom_point(alpha=0.8, shape=16) +
+  geom_smooth(method = "lm", se=FALSE) +
+  geom_vline(xintercept = 643, color = "#314f4f", size = 1, alpha = 0.5) +
+  theme_pander(base_size = 18) +
+  xlab("API score") + 
+  ylab("Math score")
+
+math_binned
 ```
 
 
@@ -177,9 +197,8 @@ modelsummary(list(linear_const, linear_diff, quadratic),
 ```
 
 **B3.** Write a discussion paragraph in which you present the substantive conclusions (and limitations) of your results about the effects of added textbook funding for California elementary school students.
-```{r}
 
-```
+
 
 **B4.** Optional Extension Present a series of robustness checks to the main results you have found. Consider varying year, functional form and bandwidth of your estimates.
 
