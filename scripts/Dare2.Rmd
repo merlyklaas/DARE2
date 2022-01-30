@@ -86,9 +86,31 @@ dat <-dat %>% mutate(low = ifelse(api_rank <= 643,TRUE,FALSE))
 
 *For the following tasks, give your best attempt at completing the analysis and write-up. If you are unable to conduct the programming or analysis, describe what you are attempting to do and what your results would mean. For these tasks, think about what bandwidth is the correct one to present for your main results.*
 
+```{r}
+library(here)
+library(rio)
+library(tidyverse)
+library(ggthemes)
+
+holden <- import(here("data", "EDLD_650_CA_schools_es.dta"))
+```
+
+
 **B1.** Did the receipt of additional funds for instructional materials improve test score outcomes for elementary students in California? Construct a figure that presents graphical evidence in support of your answer to this question. Pay close attention to the bandwidth of analysis Holden selects. Either use the same bandwidth or justify a different selection. Write up your description of this figure in one (1) paragraph as you would for an academic paper. If you have not completed the previously mentioned data management tasks to bin the forcing variable, explain how and why your figure looks different from the original figure in 2-3 sentences.
 
+ind = if they received funds
+average_score = predictor, measured in school-level standard deviations
+Holden only uses 2006 values (p. 106)
 ```{r}
+mod <- lm(average_score ~ ind, data=holden)
+summary(mod)
+```
+```{r}
+holden %>% 
+  ggplot()+
+  geom_jitter(aes(x=ind, y=average_score), color="grey50", alpha=0.4, shape=16) +
+  geom_line(aes(x=ind, y = average_score), color="#e64173", linetype="dashed", size=1.5)
+```
 
 # Check if the forcing variable 
 
@@ -115,10 +137,37 @@ binned_plot <- ggplot() +
 binned_plot
 ```
 
+
 **B2.** In a regression framework, formally test whether the receipt of additional funds for instructional materials improved test score outcomes for elementary students in California. Present these results in a table and associated 1-2 paragraph write-up as you would in an academic paper.
 
 ```{r}
+library(modelsummary)
+linear_const <- lm(average_score ~ api_rank + I(api_rank<643), holden)
+linear_diff <- lm(average_score ~ api_rank * I(api_rank<643), holden)
+quadratic <- lm(average_score ~ poly(api_rank,2) + I(api_rank<643), holden)
 
+modelsummary(list(linear_const, linear_diff, quadratic), 
+             stars=T,
+             coef_rename = c("(Intercept)" = "Intercept", "api_rank" = "api_rank", "I(api_rank <643)TRUE" = "Intended small class",
+                             "size:I(size > 40.5)TRUE" = "Size x Small", 
+                             "poly(size, 2)1" = "Intended size", "poly(size, 2)2" = "(Intended size)^2"),
+             gof_omit = "Adj|Pseudo|Log|Within|AIC|BIC|FE|Std|F"
+            )
+```
+
+```{r, results='asis'}
+library(modelsummary)
+linear_const <- lm(average_score ~ norm + I(norm<0), holden)
+linear_diff <- lm(average_score ~ norm * I(norm<0), holden)
+quadratic <- lm(average_score ~ poly(norm,2) + I(norm<0), holden)
+
+modelsummary(list(linear_const, linear_diff, quadratic), 
+             stars=T,
+             coef_rename = c("(Intercept)" = "Intercept", "norm" = "api_rank", "I(api_rank <643)TRUE" = "Intended small class",
+                             "size:I(size > 40.5)TRUE" = "Size x Small", 
+                             "poly(size, 2)1" = "Intended size", "poly(size, 2)2" = "(Intended size)^2"),
+             gof_omit = "Adj|Pseudo|Log|Within|AIC|BIC|FE|Std|F"
+            )
 ```
 
 **B3.** Write a discussion paragraph in which you present the substantive conclusions (and limitations) of your results about the effects of added textbook funding for California elementary school students.
