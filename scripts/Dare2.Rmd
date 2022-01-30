@@ -16,8 +16,6 @@ library(pacman)
 p_load(here, rio, tidyverse, DT, ggplot2, xaringan, knitr, kableExtra, modelsummary, stargazer, xaringanthemer, gganimate, ggthemes, fixest, haven)
 
 dat <- import(here("data", "EDLD_650_CA_schools_es.dta"))
-
-
 ``` 
 
 *In this project, you will replicate and extend analysis from Holden (2016). In the dataset EDLD 650 CA school es.dta, you will find the variables listed in Table 1. The dataset includes school years 2003-2009. Without binning the forcing variable, your figures will look slightly different than those in Holden. This is fine and will not affect the substantive conclusions. If you would like to set yourself a data management challenge, attempt to mirror the figures exactly! Pay careful attention throughout to which years you should be using in your analyses.*
@@ -36,7 +34,7 @@ data_a1 <- data %>%
 
 # y = receive of treatment = receive_williams; 
 # x = forcing variable = api_rank (or norm)
-#receipt of treatment (receipt Williams) against forcing variable (API score)
+#receipt of treatment (receipt Williams) against forcing variable
 
 treat <- ggplot() +
   #actual recipient
@@ -99,10 +97,6 @@ dat <-dat %>% mutate(low = ifelse(api_rank <= 643,TRUE,FALSE))
 *For the following tasks, give your best attempt at completing the analysis and write-up. If you are unable to conduct the programming or analysis, describe what you are attempting to do and what your results would mean. For these tasks, think about what bandwidth is the correct one to present for your main results.*
 
 ```{r}
-library(here)
-library(rio)
-library(tidyverse)
-library(ggthemes)
 
 holden <- import(here("data", "EDLD_650_CA_schools_es.dta"))
 ```
@@ -117,12 +111,13 @@ Holden only uses 2006 values (p. 106)
 mod <- lm(average_score ~ ind, data=holden)
 summary(mod)
 ```
+
 ```{r}
 holden %>% 
   ggplot()+
   geom_jitter(aes(x=ind, y=average_score), color="grey50", alpha=0.4, shape=16) +
   geom_line(aes(x=ind, y = average_score), color="#e64173", linetype="dashed", size=1.5)
-```
+
 
 # Check if the forcing variable 
 
