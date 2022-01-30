@@ -92,7 +92,6 @@ sort
 
 **B1.** Did the receipt of additional funds for instructional materials improve test score outcomes for elementary students in California? Construct a figure that presents graphical evidence in support of your answer to this question. Pay close attention to the bandwidth of analysis Holden selects. Either use the same bandwidth or justify a different selection. Write up your description of this figure in one (1) paragraph as you would for an academic paper. If you have not completed the previously mentioned data management tasks to bin the forcing variable, explain how and why your figure looks different from the original figure in 2-3 sentences.
 
-Holden only uses 2006 values (p. 106)
 
 ```{r}
 dat$ind <- as.factor(dat$ind)
@@ -163,35 +162,36 @@ math_binned <- bin_math %>%
 math_binned
 ```
 
+To allow for non-linear (quadratic) forcing variable trends for average scores, we created the following plot, though the fit of this plot does not seem to improve with the added quadratic term.
+```{r}
+fx_binned2 <- bin %>% 
+  ggplot(aes(x=api_rank, y=average_score, color = low)) +
+  geom_point(alpha=0.8, shape=16) +
+  geom_smooth(method = "lm", formula=y ~ poly(x,2), se=TRUE) +
+  geom_vline(xintercept = 643, color = "#314f4f", size = 1, alpha = 0.5) +
+  theme_pander(base_size = 18) +
+  xlab("API score") + 
+  ylab("Average score") 
+
+fx_binned2
+```
+
+Our figures, however, differ from those in Holden (2016) for many reasons. One, Holden only uses values from 2006 (p. 106)...
+
 
 **B2.** In a regression framework, formally test whether the receipt of additional funds for instructional materials improved test score outcomes for elementary students in California. Present these results in a table and associated 1-2 paragraph write-up as you would in an academic paper.
 
 ```{r}
 library(modelsummary)
-linear_const <- lm(average_score ~ api_rank + I(api_rank<643), holden)
-linear_diff <- lm(average_score ~ api_rank * I(api_rank<643), holden)
-quadratic <- lm(average_score ~ poly(api_rank,2) + I(api_rank<643), holden)
+linear_const <- lm(average_score ~ api_rank + I(api_rank<643), bin)
+linear_diff <- lm(average_score ~ api_rank * I(api_rank<643), bin)
+quadratic <- lm(average_score ~ poly(api_rank,2) + I(api_rank<643), bin)
 
 modelsummary(list(linear_const, linear_diff, quadratic), 
              stars=T,
-             coef_rename = c("(Intercept)" = "Intercept", "api_rank" = "api_rank", "I(api_rank <643)TRUE" = "Intended small class",
-                             "size:I(size > 40.5)TRUE" = "Size x Small", 
-                             "poly(size, 2)1" = "Intended size", "poly(size, 2)2" = "(Intended size)^2"),
-             gof_omit = "Adj|Pseudo|Log|Within|AIC|BIC|FE|Std|F"
-            )
-```
-
-```{r, results='asis'}
-library(modelsummary)
-linear_const <- lm(average_score ~ norm + I(norm<0), holden)
-linear_diff <- lm(average_score ~ norm * I(norm<0), holden)
-quadratic <- lm(average_score ~ poly(norm,2) + I(norm<0), holden)
-
-modelsummary(list(linear_const, linear_diff, quadratic), 
-             stars=T,
-             coef_rename = c("(Intercept)" = "Intercept", "norm" = "api_rank", "I(api_rank <643)TRUE" = "Intended small class",
-                             "size:I(size > 40.5)TRUE" = "Size x Small", 
-                             "poly(size, 2)1" = "Intended size", "poly(size, 2)2" = "(Intended size)^2"),
+             coef_rename = c("(Intercept)" = "Intercept", "api_rank" = "Academic Performance", "I(api_rank<643)TRUE" = "Intended Award",
+                             "api_rank:I(api_rank<643)TRUE" = "Score x Award", 
+                             "poly(api_rank, 2)1" = "Intended Award", "poly(api_rank, 2)2" = "(Intended Award)^2"),
              gof_omit = "Adj|Pseudo|Log|Within|AIC|BIC|FE|Std|F"
             )
 ```
