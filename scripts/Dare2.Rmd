@@ -30,15 +30,27 @@ dat <- import(here("data", "EDLD_650_CA_schools_es.dta"))
 
 ```{r}
 
-# Does the forcing variable predict (some) change in the probability of treatment?
+#schools with API of 643 or lower in 2003:
+data_a1 <- data %>% 
+  filter(year == 2003 & norm <= 0) 
 
-el<- dat %>%  
-  filter(grepl(".Elementary", sname)) %>% 
-  drop_na(receive_williams) %>% 
-  ggplot(aes(api_rank,as.factor(receive_williams))) +
-  geom_point()+
-  geom_vline(xintercept = 643)
-el
+# y = receive of treatment = receive_williams; 
+# x = forcing variable = api_rank (or norm)
+#receipt of treatment (receipt Williams) against forcing variable (API score)
+
+treat <- ggplot() +
+  #actual recipient
+  geom_jitter(data=data, aes(x=api_rank, y=receive_williams), color=grey_mid,alpha=0.4, shape=16) + 
+  
+  # filter year 2003 and API 643 or lower (norm <=0 )
+  geom_jitter(data=data_a1, aes(x=api_rank, y=receive_williams), color="blue",alpha=0.4, shape=16)+
+  
+  #intended recipient
+  geom_line(data=data, aes(x=api_rank, y=ind), color=red_pink, linetype="dashed", size = 1.5) +
+  theme_pander(base_size = 18) + scale_x_continuous("API Score") +
+  scale_y_discrete("Received Williams")
+
+treat
 ```
 
 **A2.** Is there evidence of schools manipulating their placement around the discontinuity? Present at least two figures demonstrating (a) whether there is evidence that schools attempted to receive an API score that would have made them eligible to receive additional funding; and (b) whether there is evidence that schools that did and did not receive Williams funding were different in observable ways. These figures should present characteristics of schools that are exogenous to the receipt of Williams funding (think about what would be exogenous in this case). Present the figures and associated write-up as you would report these in an academic paper in 1-2 paragraphs. 
