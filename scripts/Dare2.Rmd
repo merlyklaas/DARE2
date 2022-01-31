@@ -2,7 +2,12 @@
 title: "Holden (2016) Data Replication & Extension"
 author: "Anwesha Guha, Merly Klaas, Thuy Nguyen,"
 date: "1/27/2022"
-output: html_document
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    highlight: espresso
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
@@ -13,7 +18,7 @@ knitr::opts_chunk$set(
 
 library(pacman)
 # These are the packages you will need for the analyses 
-p_load(here, rio, tidyverse, DT, ggplot2, xaringan, knitr, kableExtra, modelsummary, stargazer, xaringanthemer, gganimate, ggthemes, fixest, haven)
+p_load(here, rio, tidyverse, DT, ggplot2, xaringan, knitr, kableExtra, modelsummary, stargazer, xaringanthemer, gganimate, ggthemes, fixest, haven, gtsummary)
 
 dat <- import(here("data", "EDLD_650_CA_schools_es.dta"))
 ``` 
@@ -69,22 +74,147 @@ bunch <- dat %>%
   theme_minimal()
 bunch
 ```
+
 There is no evidence of bunching around the 643 cutoff. This makes sense according to Holden's design: 2003 is unambiguously pre-Williams settlement. While 2004 and onwards may expect lower-income schools to manipulate API score to increases textbook funding for their students, that opportunity was not known at this time.
 
-```{r}
-#  Examine whether pre-treatment characteristics differ around the cutoff score discontinuity (binned scatterplot of covariates around discontinuity)
 
-## Differences in FRLP status
-sort <- ggplot() +
-  geom_boxplot(data=dat, aes(x=as.factor(api_rank), y=percentfrl), fill="tomato3", alpha=0.4) +
-  xlab("API in 2003 relative to cutoff") + 
-  scale_y_continuous("Percent of Low-Income students")+
-  theme_tufte() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
-sort
+**Smoothness of Average in test score Before Disbursal of Textbook funding in Elementary Schools**
+
+```{r}
+a03 <-  dat %>% 
+  filter(year == "2003") %>% 
+  group_by(api_rank) %>% 
+     summarise(across(c("average_score", "ind"), mean)) %>% 
+  ggplot() +
+   geom_point(aes(x=api_rank, y=average_score), color = "turquoise3") + 
+  scale_x_binned(n.breaks = 20) +
+  scale_x_discrete() +
+  geom_vline(xintercept = 643) +
+   labs(x ="API in 2003 relative to cutoff",
+        y = "Average Std. Test Score by school",
+        title = " Average Score Pre-treatment in 2003")+
+  theme_tufte() 
+a03
+
+
+a04 <-  dat %>% 
+  filter(year == "2004") %>% 
+  group_by(api_rank) %>% 
+     summarise(across(c("average_score", "ind"), mean)) %>% 
+  ggplot() +
+   geom_point(aes(x=api_rank, y=average_score), color = "gray") + 
+  scale_x_binned(n.breaks = 20) +
+  scale_x_discrete() +
+  geom_vline(xintercept = 643) +
+   labs(x ="API in 2003 relative to cutoff",
+        y = "Average Std. Test Score by school",
+        title = " Average Score Pre-treatment in 2004")+
+  theme_bw()
+a04
+
+```
+**Smoothness of Student Characteristics Before Disbursal of Textbook Funding in Elementary Schools**
+
+```{r}
+en04 <-  dat %>% 
+  filter(year == "2003") %>% 
+   group_by(api_rank) %>% 
+     summarise(across(c("total", "ind"), mean)) %>% 
+  ggplot() +
+   geom_point(aes(x=api_rank, y= total), color = "grey") + 
+  scale_x_binned(n.breaks = 20) +
+  scale_x_discrete() +
+  geom_vline(xintercept = 643) +
+   labs(x ="API in 2003 relative to cutoff",
+        y = "Enrollment in 2003",
+        title = " School Enrollment Pre-treatment in 2003") +
+  theme_bw()
+en04
+
+frlp <- dat %>% 
+  filter(year == "2003") %>% 
+  ggplot() +
+  geom_boxplot(aes(x=as.factor(api_rank), y=percentfrl), fill="tomato3", alpha=0.4) +
+  geom_vline(xintercept = 643, color = "red") +
+   labs(x ="API in 2003 relative to cutoff",
+        y = "Pct eligible for FRPL in 2003",
+        title = "Percent Free and Reduced Lunch") +
+   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) 
+frlp
+
 ```
 
+**Smoothness of Staff Characteristics Before Disbursal of Textbook funding in Elementary Schools**
+
+
+```{r}
+staff <-  dat %>% 
+  filter(year == "2004") %>% 
+  group_by(norm) %>% 
+     summarise(across(c("yrs_teach", "ind"), mean)) %>% 
+  ggplot() +
+   geom_point(aes(x=norm, y= yrs_teach), color = "gray") + 
+  geom_vline(xintercept = 0) +
+   labs(x ="API in 2003 relative to cutoff",
+        y = "Average Year of Teacher Teaching Experience",
+        title = " Teacher Experience Pre-treatment in 2004") +
+  theme_bw()
+staff
+
+dist <-  dat %>% 
+  filter(year == "2004") %>% 
+  group_by(norm) %>% 
+     summarise(across(c("yrs_dist", "ind"), mean)) %>% 
+  ggplot() +
+   geom_point(aes(x=norm, y= yrs_dist), color = "gray") + 
+  geom_vline(xintercept = 0) +
+   labs(x ="API in 2003 relative to cutoff",
+        y = "Years in District",
+        title = " Teacher Experience in District level Pre-treatment in 2004") +
+  theme_bw()
+staff
+
+```
+
+**The falsifications tests for individual school characteristics were conducted through the smoothness visual inspections to the numbers of school characteristics before disbursal of textbook funding that are exogenous to the receipt of Williams funding including: a. Average Test Score, b. Student Characteristics, and  c. Staff Characteristics.** 
+
+**Each figure shows each school characteristics distributions pre-treatment are smooth through the cutoff prior to treatment. This suggests that schools right below and above cutoff are equal in expectation prior to treatment.**
+
+
 **A3** Optional Extension Construct a table of summary statistics. What are the sample characteristics of the subset of elementary schools in our dataset? What is different about our data from the full data used in Holden (2016) and how might that affect the interpretation of results? Present the table and associated write-up as you would report these in an academic paper in 1-2 paragraphs.
+
+```{r}
+sum <- import(here("data", "EDLD_650_CA_schools_es.dta")) 
+sum %>% 
+  select(
+    "Math Score" = mathscore,
+    "Reading Score"= readingscore, 
+    "API score in 2003" = api_rank,
+   " Total Enrolment "= total, 
+    "Percent Hispanic" = pct_hi,
+    "Percent White" = pct_wh,
+   "Percent FRPL eligible" = percentfrl) %>%
+tbl_summary(statistic = list(all_continuous() ~ "{mean}")) %>%
+  modify_caption("**Summary Statistics for Elementary School Sample**") 
+
+
+dat %>%
+  select(
+    "Math Score" = mathscore,
+    "Reading Score" = readingscore, 
+    "API score in 2003" = api_rank,
+   "Total Enrolment"= total, 
+    "Percent Hispanic" = pct_hi,
+    "Percent White" = pct_wh,
+   "Percent FRPL eligible" = percentfrl) %>%
+tbl_summary(statistic = list(all_continuous() ~ "{mean}"),
+            digits = all_continuous() ~ 2) %>% 
+  modify_caption("**Summary Statistics of 19.099 API Bandwith around eligibility cutoff**") 
+
+```
+
+Summary statistics tables presented here are only for Elementary school-year observation (Table 1) and those within 19.099 API Bandwidth (Table 2), respectively n= 16,462 and n = 3,725, while Holden (2016) used full sample including Middle and High School-year observation (n=54,803). Thus, the interpretation of the summary stats reflects only Elementary School characteristics. 
+
 
 ### B. Replication and Extension (6 points)
 
