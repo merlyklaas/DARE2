@@ -1,6 +1,6 @@
 ---
 title: "Holden (2016) Data Replication & Extension"
-author: "Anwesha Guha, Merly Klaas, Thuy Nguyen,"
+author: "Anwesha Guha, Merly Klaas, Thuy Nguyen"
 date: "1/27/2022"
 output:
   html_document:
@@ -176,9 +176,9 @@ staff
 
 ```
 
-**The falsifications tests for individual school characteristics were conducted through the smoothness visual inspections to the numbers of school characteristics before disbursal of textbook funding that are exogenous to the receipt of Williams funding including: a. Average Test Score, b. Student Characteristics, and  c. Staff Characteristics.** 
+The falsifications tests for individual school characteristics were conducted through the smoothness visual inspections to the numbers of school characteristics before disbursal of textbook funding that are exogenous to the receipt of Williams funding including: a. Average Test Score, b. Student Characteristics, and  c. Staff Characteristics. 
 
-**Each figure shows each school characteristics distributions pre-treatment are smooth through the cutoff prior to treatment. This suggests that schools right below and above cutoff are equal in expectation prior to treatment.**
+Each figure shows each school characteristics distributions pre-treatment are smooth through the cutoff prior to treatment. This suggests that schools right below and above cutoff are equal in expectation prior to treatment.
 
 
 **A3** Optional Extension Construct a table of summary statistics. What are the sample characteristics of the subset of elementary schools in our dataset? What is different about our data from the full data used in Holden (2016) and how might that affect the interpretation of results? Present the table and associated write-up as you would report these in an academic paper in 1-2 paragraphs.
@@ -306,7 +306,6 @@ fx_binned2 <- bin %>%
 fx_binned2
 ```
 
-Our figures, however, differ from those in Holden (2016) for many reasons. One, Holden only uses values from 2006 (p. 106)...
 
 
 **B2.** In a regression framework, formally test whether the receipt of additional funds for instructional materials improved test score outcomes for elementary students in California. Present these results in a table and associated 1-2 paragraph write-up as you would in an academic paper.
@@ -319,16 +318,24 @@ quadratic <- lm(average_score ~ poly(api_rank,2) + I(api_rank<643), bin)
 
 modelsummary(list(linear_const, linear_diff, quadratic), 
              stars=T,
-             coef_rename = c("(Intercept)" = "Intercept", "api_rank" = "Academic Performance", "I(api_rank<643)TRUE" = "Intended Award",
-                             "api_rank:I(api_rank<643)TRUE" = "Score x Award", 
+             coef_rename = c("(Intercept)" = "Intercept", "api_rank" = "Academic Performance", "I(api_rank < 643)TRUE" = "Intended Award",
+                             "api_rank:I(api_rank < 643)TRUE" = "Score x Award", 
                              "poly(api_rank, 2)1" = "Intended Award", "poly(api_rank, 2)2" = "(Intended Award)^2"),
              gof_omit = "Adj|Pseudo|Log|Within|AIC|BIC|FE|Std|F"
             )
 ```
 
+Following that the additional $96.90 per student for textbook funds significantly increased school-average STAR test scores by 0.15 standard deviations in the paper, Model 1 and Model 3 also suggest a positive relationship between receiving additional funding and increased test scores.
+
 **B3.** Write a discussion paragraph in which you present the substantive conclusions (and limitations) of your results about the effects of added textbook funding for California elementary school students.
+```{r}
+-6.405+.009*644-8.927*0+.014*644*0 #did not receive funds
+-6.405+.009*642-8.927*1+.014*644*1 #received funds
+.609-.538
+```
 
-
+The predicted effect of receiving additional textbook funding when we allow the slopes to vary around the discontinuity is .071, slightly smaller than the constant linear or quadratic slopes. While the overall academic performance may be negative, there is less of a negative effect whne schools receive the award.
+Similar to Holden, the estimated discontinuity in 2005 is being driven by change in the slope of points near the threshold. These results are relevant and generalizable to other schools on the cusp, not high-performing schools or schools with greater baseline textbook funding in the first place.
 
 **B4.** Optional Extension Present a series of robustness checks to the main results you have found. Consider varying year, functional form and bandwidth of your estimates.
 
